@@ -94,10 +94,17 @@ export default function Preview({ content, pdfConfig }: PreviewProps) {
         const childHeight = (child as HTMLElement).offsetHeight
         const isManualBreak = child.classList.contains('page-break')
 
-        if (isManualBreak || (currentPageHeight + childHeight > maxContentHeight && currentPageHeight > 0)) {
+        if (isManualBreak) {
+          if (currentPageHeight > 0) {
+            pages.push([])
+            currentPageHeight = 0
+          }
+          return // skip the break div itself
+        }
+
+        if (currentPageHeight + childHeight > maxContentHeight && currentPageHeight > 0) {
           pages.push([])
           currentPageHeight = 0
-          if (isManualBreak) return // skip the break div itself in rendering
         }
 
         pages[pages.length - 1].push(child.outerHTML)

@@ -419,10 +419,17 @@
   border: none !important;
   box-shadow: none !important;
   box-sizing: border-box !important;
-  page-break-after: auto !important;
+  page-break-after: always !important;
   page-break-before: auto !important;
   padding: 0 !important;
+  margin: 0 auto !important;
+  width: calc(var(--page-w) - 2 * var(--page-margin)) !important;
+  min-height: auto !important;
   /* Critical: html2pdf will provide the margin */
+}
+
+.pdf-export-mode .preview-content.markdown-body:last-child {
+  page-break-after: auto !important;
 }
 
 .pdf-export-mode .preview-content::after {
