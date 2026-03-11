@@ -3,13 +3,27 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css' // Clean, professional theme
-import '../styles/preview.css'
 
 import type { PDFConfig } from '../App'
+
+// const [isPrintMode, setIsPrintMode] = useState(false)
+
+// useEffect(() => {
+//   const media = window.matchMedia('print')
+
+//   const listener = () => setIsPrintMode(media.matches)
+
+//   media.addEventListener('change', listener)
+//   setIsPrintMode(media.matches)
+
+//   return () => media.removeEventListener('change', listener)
+// }, [])
 
 interface PreviewProps {
   content: string
   pdfConfig: PDFConfig
+  showPDFTimestamp: boolean
+  showPageNumbers: boolean
 }
 
 // Configure marked to use highlight.js
@@ -22,11 +36,24 @@ marked.setOptions({
   },
 } as any)
 
-export default function Preview({ content, pdfConfig }: PreviewProps) {
+export default function Preview({ content, pdfConfig, showPDFTimestamp, showPageNumbers }: PreviewProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const hiddenMeasureRef = useRef<HTMLDivElement>(null)
   const [paginatedPages, setPaginatedPages] = useState<string[]>([])
+
+  const [isPrintMode, setIsPrintMode] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('print')
+
+    const listener = () => setIsPrintMode(media.matches)
+
+    media.addEventListener('change', listener)
+    setIsPrintMode(media.matches)
+
+    return () => media.removeEventListener('change', listener)
+  }, [])
 
   // Parse markdown → sanitized HTML
   const fullHtml = useMemo(() => {
@@ -42,7 +69,7 @@ export default function Preview({ content, pdfConfig }: PreviewProps) {
         'details', 'summary',
         'span', 'div',
       ],
-      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel', 'align', 'style'],
     })
   }, [content])
 
@@ -67,54 +94,56 @@ export default function Preview({ content, pdfConfig }: PreviewProps) {
 
   // Auto-Pagination Logic
   useEffect(() => {
+    if (isPrintMode) return
+
+
     const measureEl = hiddenMeasureRef.current
     if (!measureEl) return
 
-    // Render full HTML to measure
     measureEl.innerHTML = fullHtml
 
-    // Wait a bit for images/styles to load if any (though marked is sync)
-    // For robust measurement, we use rAF
-    const doPagination = () => {
-      const key = `${pdfConfig.format}-${pdfConfig.orientation}`
-      const totalPageHeightMm = formatHeights[key] || 297
-      const totalPageWidthMm = formatWidths[key] || 210
+    const key = `${pdfConfig.format}-${pdfConfig.orientation}`
 
-      // PPI approx 96
-      const totalHeightPx = (totalPageHeightMm * 96) / 25.4
-      const marginPx = (pdfConfig.margin * 96)
-      const maxContentHeight = totalHeightPx - (marginPx * 2)
+    const totalPageHeightMm = formatHeights[key] || 297
+    const totalHeightPx = (totalPageHeightMm * 96) / 25.4
 
-      const pages: string[][] = [[]]
-      let currentPageHeight = 0
+    const marginPx = pdfConfig.margin * 96
+    const usableHeight = totalHeightPx - marginPx * 2 - 40
 
-      const children = Array.from(measureEl.children)
+    const pages: string[] = []
 
-      children.forEach((child) => {
-        const childHeight = (child as HTMLElement).offsetHeight
-        const isManualBreak = child.classList.contains('page-break')
+    let currentPageHTML = ''
+    let currentHeight = 0
 
-        if (isManualBreak) {
-          if (currentPageHeight > 0) {
-            pages.push([])
-            currentPageHeight = 0
-          }
-          return // skip the break div itself
+    const elements = Array.from(measureEl.children) as HTMLElement[]
+
+    elements.forEach((el) => {
+
+      // Handle manual page break
+      if (el.classList.contains('page-break')) {
+        if (currentPageHTML !== '') {
+          pages.push(currentPageHTML)
+          currentPageHTML = ''
+          currentHeight = 0
         }
+        return
+      }
 
-        if (currentPageHeight + childHeight > maxContentHeight && currentPageHeight > 0) {
-          pages.push([])
-          currentPageHeight = 0
-        }
+      const elHeight = el.getBoundingClientRect().height
 
-        pages[pages.length - 1].push(child.outerHTML)
-        currentPageHeight += childHeight
-      })
+      if (currentHeight + elHeight > usableHeight && currentPageHTML !== '') {
+        pages.push(currentPageHTML)
+        currentPageHTML = ''
+        currentHeight = 0
+      }
 
-      setPaginatedPages(pages.map(p => p.join('')))
-    }
+      currentPageHTML += el.outerHTML
+      currentHeight += elHeight
+    })
 
-    requestAnimationFrame(doPagination)
+    if (currentPageHTML) pages.push(currentPageHTML)
+
+    setPaginatedPages(pages)
   }, [fullHtml, pdfConfig.format, pdfConfig.orientation, pdfConfig.margin])
 
   // Dynamic Scaling Logic
@@ -180,12 +209,14 @@ export default function Preview({ content, pdfConfig }: PreviewProps) {
     return () => container.removeEventListener('click', handleClick)
   }, [])
 
+  const pagesToRender = paginatedPages.length ? paginatedPages : [fullHtml];
+
   return (
-    <div className="preview-wrapper" ref={wrapperRef}>
+    <div className="flex-1 overflow-y-auto overflow-x-hidden h-full bg-gray-100 dark:bg-[#0f1115] print:bg-white print:overflow-visible print:h-auto print:block" ref={wrapperRef}>
       {/* Hidden container for measurement */}
       <div
         ref={hiddenMeasureRef}
-        className="markdown-body"
+        className="prose dark:prose-invert max-w-none break-words print:!max-w-none"
         style={{
           position: 'absolute',
           visibility: 'hidden',
@@ -197,25 +228,46 @@ export default function Preview({ content, pdfConfig }: PreviewProps) {
       />
 
       <div
-        className="preview-page-container"
+        className="preview-page-container flex flex-col items-center py-8 gap-8 min-h-full print:py-0 print:gap-0 print:block print:w-full print:m-0"
         ref={containerRef}
-        data-format={pdfConfig.format}
-        data-orientation={pdfConfig.orientation}
         style={{
           '--page-margin': `${pdfConfig.margin}in`
         } as any}
       >
-        {paginatedPages.map((pageHtml: string, index: number) => (
+
+        {pagesToRender.map((pageHtml: string, index: number) => (
           <div
-            key={index}
-            className="preview-content markdown-body"
+            key={index + '-' + showPageNumbers + '-' + showPDFTimestamp}
+            className="preview-content bg-white dark:bg-[#16181d] shadow-md dark:shadow-xl shrink-0 prose dark:prose-invert !max-w-none break-words print:!shadow-none print:!bg-transparent print:!m-0"
+            style={{
+              width: pdfConfig.orientation === 'portrait'
+                ? `${formatWidths[`${pdfConfig.format}-portrait`]}mm`
+                : `${formatWidths[`${pdfConfig.format}-landscape`]}mm`,
+              height: pdfConfig.orientation === 'portrait'
+                ? `${formatHeights[`${pdfConfig.format}-portrait`]}mm`
+                : `${formatHeights[`${pdfConfig.format}-landscape`]}mm`,
+              padding: `${pdfConfig.margin}in`,
+              position: 'relative',
+              pageBreakAfter: index < pagesToRender.length - 1 ? 'always' : 'auto'
+            }}
           >
-            {pdfConfig.headerText && <div className="preview-custom-header">{pdfConfig.headerText}</div>}
-            <div dangerouslySetInnerHTML={{ __html: pageHtml }} />
-            {pdfConfig.footerText && <div className="preview-custom-footer">{pdfConfig.footerText}</div>}
+            {pdfConfig.headerText && <div className="absolute top-4 left-0 right-0 text-center text-[10px] text-gray-400 font-mono tracking-widest uppercase z-10">{pdfConfig.headerText}</div>}
+            {showPDFTimestamp && (
+              <div className="absolute top-4 left-4 text-[10px] text-gray-400 font-mono z-10">
+                {new Date().toLocaleDateString('en-GB') + ', ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
+            {/* Added a safe container with padding to prevent content from hitting the absolute overlays */}
+            <div className="relative pt-6 pb-6" dangerouslySetInnerHTML={{ __html: pageHtml }} />
+            {pdfConfig.footerText && <div className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-gray-400 font-mono tracking-widest uppercase z-10">{pdfConfig.footerText}</div>}
+            {showPageNumbers && (
+              <div className="absolute bottom-4 right-4 text-[10px] text-gray-400 font-mono z-10">
+                {index + 1}/{pagesToRender.length}
+              </div>
+            )}
           </div>
         ))}
-        <div className="preview-page-indicator">PAGE 1</div>
+        {/* Placeholder for page indicator logic if needed */}
       </div>
     </div>
   )

@@ -15,33 +15,33 @@ export default function StatusBar({ fileName, content, isDirty }: StatusBarProps
   }, [content])
 
   return (
-    <div className="status-bar">
-      <div className="status-bar__left">
-        <span className="status-bar__item status-bar__path" title={fileName}>
-          {isDirty && <span className="status-bar__dot">●</span>}
+    <div className="flex items-center justify-between h-[30px] px-[14px] bg-gray-50 dark:bg-[#16181d] border-t border-gray-200 dark:border-[#2d3139] shrink-0 text-[11.5px] text-gray-500 dark:text-gray-400 [app-region:drag]">
+      <div className="flex items-center gap-[10px] [app-region:no-drag]">
+        <span className="flex items-center gap-[5px] max-w-[480px] overflow-hidden whitespace-nowrap text-ellipsis font-mono text-[11px]" title={fileName}>
+          {isDirty && <span className="text-amber-500 text-[10px] leading-none">●</span>}
           {fileName}
         </span>
       </div>
 
-      <div className="status-bar__right">
-        <span className="status-bar__item">
-          <span className="status-bar__label">Lines</span>
-          <span className="status-bar__value">{stats.lines.toLocaleString()}</span>
+      <div className="flex items-center gap-[10px] [app-region:no-drag]">
+        <span className="flex items-center gap-[4px]">
+          <span className="text-gray-400 dark:text-gray-500 text-[11px]">Lines</span>
+          <span className="text-gray-600 dark:text-gray-300 tabular-nums">{stats.lines.toLocaleString()}</span>
         </span>
-        <span className="status-bar__sep" />
-        <span className="status-bar__item">
-          <span className="status-bar__label">Words</span>
-          <span className="status-bar__value">{stats.words.toLocaleString()}</span>
+        <span className="w-[1px] h-[12px] bg-gray-300 dark:bg-[#3f4451]" />
+        <span className="flex items-center gap-[4px]">
+          <span className="text-gray-400 dark:text-gray-500 text-[11px]">Words</span>
+          <span className="text-gray-600 dark:text-gray-300 tabular-nums">{stats.words.toLocaleString()}</span>
         </span>
-        <span className="status-bar__sep" />
-        <span className="status-bar__item status-bar__item--chars">
-          <span className="status-bar__label">Chars</span>
-          <span className="status-bar__value">{stats.chars.toLocaleString()}</span>
+        <span className="w-[1px] h-[12px] bg-gray-300 dark:bg-[#3f4451]" />
+        <span className="flex items-center gap-[4px]">
+          <span className="text-gray-400 dark:text-gray-500 text-[11px]">Chars</span>
+          <span className="text-gray-600 dark:text-gray-300 tabular-nums">{stats.chars.toLocaleString()}</span>
         </span>
 
-        <span className="status-bar__sep" />
-        <span className="status-bar__item">
-          <span className="status-bar__lang">Markdown</span>
+        <span className="w-[1px] h-[12px] bg-gray-300 dark:bg-[#3f4451]" />
+        <span className="flex items-center gap-[4px]">
+          <span className="text-blue-600 dark:text-blue-500 font-semibold text-[11px]">Markdown</span>
         </span>
       </div>
     </div>
