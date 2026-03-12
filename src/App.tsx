@@ -28,6 +28,7 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>('light')
   const [splitPos, setSplitPos] = useState(50)
   const [showPDFTimestamp, setShowPDFTimestamp] = useState(true)
+  const [showPageNumbers, setShowPageNumbers] = useState(true)
   const [pdfConfig, setPdfConfig] = useState<PDFConfig>({
     format: 'a4',
     orientation: 'portrait',
@@ -45,7 +46,11 @@ export default function App() {
 
   // Apply theme on root element
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
   }, [theme])
 
   // Detect mobile for initial splitPos or pane handling
@@ -114,82 +119,12 @@ export default function App() {
     setIsDirty(true)
   }, [])
 
-  const handleDownloadPDF = useCallback(async () => {
-    const container = document.querySelector('.preview-page-container') as HTMLElement
-    if (!container) return
-
-    const html2pdfModule = await import('html2pdf.js')
-    const html2pdf = html2pdfModule.default
-
-    // Temporarily switch to light theme and add export class to body for PDF capture
-    const currentTheme = document.documentElement.getAttribute('data-theme')
-    document.documentElement.setAttribute('data-theme', 'light')
-    document.body.classList.add('pdf-export-mode')
-
-    // Wait for repaint
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
-
-    const opt = {
-      margin: pdfConfig.margin,
-      filename: fileName.replace(/\.[^/.]+$/, "") + '.pdf',
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        scrollY: -window.scrollY,
-        backgroundColor: '#ffffff'
-      },
-      jsPDF: {
-        unit: 'in',
-        format: pdfConfig.format,
-        orientation: pdfConfig.orientation
-      },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    }
-
-    const worker = html2pdf().set(opt).from(container).toPdf()
-
-    await worker.get('pdf').then((pdf: any) => {
-      const totalPages = pdf.internal.getNumberOfPages()
-
-      for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i)
-        pdf.setFontSize(8)
-        pdf.setTextColor(100)
-
-        const pageWidth = pdf.internal.pageSize.getWidth()
-        const pageHeight = pdf.internal.pageSize.getHeight()
-        const horizontalMargin = pdfConfig.margin
-        const verticalOffset = pdfConfig.margin * 0.6 // Place text at 60% of the margin area
-
-        // Header (Top Left): Date/Time (Conditional)
-        if (showPDFTimestamp) {
-          const now = new Date()
-          const dateString = now.toLocaleDateString('en-GB') + ', ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-          pdf.text(dateString, horizontalMargin, verticalOffset)
-        }
-
-        // Header (Top Right): Custom Header Text
-        if (pdfConfig.headerText) {
-          pdf.text(pdfConfig.headerText, pageWidth - horizontalMargin, verticalOffset, { align: 'right' })
-        }
-
-        // Footer (Bottom Left): Custom Footer Text
-        if (pdfConfig.footerText) {
-          pdf.text(pdfConfig.footerText, horizontalMargin, pageHeight - verticalOffset)
-        }
-
-        // Footer (Bottom Right): Page Count
-        pdf.text(`${i}/${totalPages}`, pageWidth - horizontalMargin, pageHeight - verticalOffset, { align: 'right' })
-      }
-    })
-
-    await worker.save()
-
-    // Cleanup
-    document.body.classList.remove('pdf-export-mode')
-    document.documentElement.setAttribute('data-theme', currentTheme || 'dark')
-  }, [fileName, showPDFTimestamp, pdfConfig])
+  const handleDownloadPDF = useCallback(() => {
+    // Wait for any state changes (like forced light mode) to flush to DOM
+    setTimeout(() => {
+      window.print()
+    }, 100)
+  }, [])
 
   const handleInsertImageClick = useCallback(() => {
     imageInputRef.current?.click()
@@ -234,11 +169,6 @@ export default function App() {
     setIsDirty(true)
   }, [])
 
-  const handleRename = useCallback((newName: string) => {
-    setFileName(newName)
-    setIsDirty(true)
-  }, [])
-
   const toggleTheme = useCallback(() => {
     setTheme(t => (t === 'dark' ? 'light' : 'dark'))
   }, [])
@@ -271,48 +201,83 @@ export default function App() {
   }, [])
 
   return (
-    <div className="app">
-      <input
-        type="file"
-        ref={fileInputRef}
-        style={{ display: 'none' }}
-        accept=".md,.markdown,.txt"
-        onChange={handleFileChange}
-      />
-      <input
-        type="file"
-        ref={imageInputRef}
-        style={{ display: 'none' }}
-        accept="image/*"
-        onChange={handleImageSelected}
-      />
+    <div className="h-screen bg-gray-50 dark:bg-[#0f1115] text-gray-900 dark:text-gray-100 font-ui font-antialiased print:h-auto print:overflow-visible print:bg-white">
+      <style>{`
+        @page {
+          size: ${pdfConfig.format} ${pdfConfig.orientation};
+          margin: 0 !important;
+        }
+        @media print {
+          body {
+            margin: 0;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
 
-      <Toolbar
-        theme={theme}
-        isDirty={isDirty}
-        fileName={fileName}
-        onNew={handleNew}
-        onOpen={handleOpenClick}
-        onDownload={handleDownload}
-        onDownloadPDF={handleDownloadPDF}
-        onInsertImage={handleInsertImageClick}
-        onInsertPageBreak={handleInsertPageBreak}
-        onToggleTheme={toggleTheme}
-        onRename={handleRename}
-        showPDFTimestamp={showPDFTimestamp}
-        onTogglePDFTimestamp={() => setShowPDFTimestamp(!showPDFTimestamp)}
-        pdfConfig={pdfConfig}
-        onUpdatePDFConfig={(config: Partial<PDFConfig>) => setPdfConfig(prev => ({ ...prev, ...config }))}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+          .preview-page-container {
+            gap: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
 
-      <div className={`workspace ${isMobile ? 'workspace--mobile' : ''}`} ref={containerRef}>
-        {(!isMobile || activeTab === 'editor') && (
-          <div className="pane pane--editor" style={{ width: isMobile ? '100%' : `${splitPos}%` }}>
-            <div className="pane__header">
-              <span className="pane__label">Editor</span>
-            </div>
+          .preview-content {
+            box-shadow: none !important;
+            border: none !important;
+            break-inside: avoid;
+            page-break-after: always;
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
+
+      {/* Main Web UI: Adapted for print by hiding sidebars directly instead of a separate portal */}
+      <div className="flex flex-col h-full overflow-hidden text-gray-900 dark:text-gray-100 print:overflow-visible print:h-auto print:block">
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          accept=".md,.markdown,.txt"
+          onChange={handleFileChange}
+        />
+        <input
+          type="file"
+          ref={imageInputRef}
+          style={{ display: 'none' }}
+          accept="image/*"
+          onChange={handleImageSelected}
+        />
+
+        <div className="print:hidden">
+          <Toolbar
+            theme={theme}
+            isDirty={isDirty}
+            fileName={fileName}
+            onNew={handleNew}
+            onOpen={handleOpenClick}
+            onDownload={handleDownload}
+            onDownloadPDF={handleDownloadPDF}
+            onInsertImage={handleInsertImageClick}
+            onInsertPageBreak={handleInsertPageBreak}
+            onToggleTheme={toggleTheme}
+            showPDFTimestamp={showPDFTimestamp}
+            onTogglePDFTimestamp={() => setShowPDFTimestamp(!showPDFTimestamp)}
+            showPageNumbers={showPageNumbers}
+            onTogglePageNumbers={() => setShowPageNumbers(!showPageNumbers)}
+            pdfConfig={pdfConfig}
+            onUpdatePDFConfig={(updates) => setPdfConfig(prev => ({ ...prev, ...updates }))}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+        <div
+          ref={containerRef}
+          className="flex flex-1 overflow-hidden relative print:overflow-visible print:block print:h-auto print:w-full"
+        >
+          <div
+            className="print:hidden flex flex-col h-full bg-white dark:bg-[#16181d] shadow-sm relative z-[1] transition-transform duration-300 md:transition-none md:translate-x-0 absolute md:relative w-full md:w-auto"
+            style={{ width: isMobile ? '100%' : `${splitPos}%`, transform: isMobile && activeTab !== 'editor' ? 'translateX(-100%)' : 'none' }}
+          >
             <Editor
               value={content}
               onChange={handleChange}
@@ -320,26 +285,36 @@ export default function App() {
               onMount={(editor) => { editorRef.current = editor }}
             />
           </div>
-        )}
 
-        {!isMobile && (
-          <div className="splitter" onMouseDown={onMouseDown}>
-            <div className="splitter__handle" />
+          {/* Splitter */}
+          <div
+            className="print:hidden hidden md:flex w-[6px] bg-gray-200 dark:bg-gray-800 hover:bg-blue-500 dark:hover:bg-blue-500 cursor-col-resize shrink-0 relative z-[10] transition-colors items-center justify-center group active:bg-blue-600"
+            onMouseDown={onMouseDown}
+          >
+            <div className="w-[2px] h-[24px] bg-gray-400 dark:bg-gray-600 rounded-full group-hover:bg-white transition-colors" />
           </div>
-        )}
 
-        {(!isMobile || activeTab === 'preview') && (
-          <div className="pane pane--preview" style={{ width: isMobile ? '100%' : `${100 - splitPos}%` }}>
-            <div className="pane__header">
-              <span className="pane__label">Preview</span>
-            </div>
-            <Preview content={content} pdfConfig={pdfConfig} />
+          <div
+            className="flex flex-col h-full bg-gray-50 dark:bg-[#0f1115] relative z-[0] transition-transform duration-300 md:transition-none md:translate-x-0 absolute md:relative w-full md:w-auto print:!absolute print:!inset-0 print:!w-full print:!h-auto print:!block print:!transform-none print:z-50 print:bg-white"
+            style={{ width: isMobile ? '100%' : `${100 - splitPos}%`, transform: isMobile && activeTab !== 'preview' ? 'translateX(100%)' : 'none' }}
+          >
+            <Preview
+              content={content}
+              pdfConfig={pdfConfig}
+              showPDFTimestamp={showPDFTimestamp}
+              showPageNumbers={showPageNumbers}
+            />
           </div>
-        )}
+        </div>
+
+        <div className="print:hidden">
+          <StatusBar
+            content={content}
+            fileName={fileName}
+            isDirty={isDirty}
+          />
+        </div>
       </div>
-
-      <StatusBar fileName={fileName} content={content} isDirty={isDirty} />
     </div>
   )
 }
-

@@ -10,11 +10,11 @@ interface EditorProps {
 
 export default function Editor({ value, onChange, theme, onMount }: EditorProps) {
   return (
-    <div className="editor-wrapper">
+    <div className="flex-1 min-h-0 min-w-0 bg-white dark:bg-[#16181d] overflow-hidden rounded-bl-xl group">
       <MonacoEditor
         height="100%"
         language="markdown"
-        loading={<div className="editor-loading">Loading editor...</div>}
+        loading={<div className="flex items-center justify-center h-full text-text-muted text-[13px] bg-bg-pane">Loading editor...</div>}
         value={value}
         theme={theme === 'dark' ? 'vs-dark' : 'vs'}
         onChange={(val) => onChange(val ?? '')}

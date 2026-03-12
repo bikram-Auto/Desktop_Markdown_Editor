@@ -14,12 +14,13 @@
     "dompurify": "^3.1.5",
     "firebase": "^12.9.0",
     "highlight.js": "^11.11.1",
-    "html2pdf.js": "^0.14.0",
     "marked": "^12.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "@tailwindcss/vite": "^4.2.1",
     "@types/dompurify": "^3.0.5",
     "@types/node": "^25.3.0",
     "@types/react": "^18.3.3",
@@ -27,9 +28,12 @@
     "@typescript-eslint/eslint-plugin": "^7.13.1",
     "@typescript-eslint/parser": "^7.13.1",
     "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.27",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.7",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5.4.5",
     "vite": "^5.3.1"
   }
