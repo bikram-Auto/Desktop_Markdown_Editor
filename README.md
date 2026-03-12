@@ -1,69 +1,81 @@
-# genPdf
+<div align="center">
+  <h1>genPdf</h1>
+  <p><strong>A modern, fast, and feature-rich Markdown Editor</strong></p>
+  <p>
+    <a href="https://desktop-markdown-editor.web.app">Live Demo</a> •
+    <a href="#key-features">Key Features</a> •
+    <a href="#installation">Installation</a> •
+    <a href="#technical-overview">Technical Overview</a>
+  </p>
+</div>
 
-A modern, fast, and feature-rich Markdown Editor built with React. It provides real-time preview, intelligent auto-pagination, and high-quality PDF exports designed to give you precise control over your document's physical layout.
+---
 
-![genPdf](https://desktop-markdown-editor.web.app/favicon.ico) <!-- Placeholder, replace if a real screenshot is available online -->
+genPdf is designed for users who need a high-fidelity Markdown writing environment with tight control over physical document layout. Unlike traditional editors, genPdf treats your document as a series of physical pages, ensuring that what you see in the preview is exactly what you get in your PDF export.
 
-## 🚀 Live Demo
-[https://desktop-markdown-editor.web.app](https://desktop-markdown-editor.web.app)
+## Key Features
 
-## ✨ Features
-
-- **Live Markdown Preview**: See your Markdown rendered in real-time as you type, complete with GitHub-flavored styling and syntax highlighting.
-- **Intelligent Auto-Pagination**: Long documents are automatically split into physical "page cards" in the preview based on your selected page size—no manual page breaks required.
-- **Physical Page Sync**: The preview pane perfectly scales to reflect true A4, Letter, or Legal dimensions, giving you a true WYSIWYG (What You See Is What You Get) experience before printing.
+- **Real-time WYSIWYG Preview**: Experience GitHub-flavored Markdown rendering as you type, with automatic syntax highlighting for code blocks.
+- **Physical Page Management**: 
+  - **Auto-Pagination**: Automatically splits long content into A4, Letter, or Legal pages.
+  - **Manual Breaks**: Insert `<div class="page-break"></div>` to force content onto a new page.
+  - **Scale-to-Fit**: The preview pane perfectly reflects the physical dimensions and margins of your chosen format.
 - **Advanced PDF Export**:
-  - Export directly to high-quality PDF.
-  - Native margin handling prevents content from overlapping with headers/footers.
-  - Customizable page format (A4, Letter, Legal) and orientation (Portrait, Landscape).
-  - Add custom Header and Footer text.
-  - Optional visual timestamps and automatic page numbering.
-- **Mobile Optimized**: A fully responsive design featuring a tabbed interface (Edit/Preview) for seamless use on smartphones and tablets.
-- **Dark/Light Mode**: Toggle between beautifully designed light and dark themes.
-- **Local File Support**: Open existing `.md` files and download your work locally.
-- **Image Support**: Easily insert local images into your markdown.
+  - High-precision rendering that respects system print settings.
+  - Customizable header/footer text with optional automated page numbering.
+  - Visual timestamps for document versioning.
+  - Branded experience via custom HTML banners for headers and footers.
+- **Smart Image Handling**:
+  - **Local Persistence**: Images are compressed and stored in IndexedDB using SHA-256 hashing.
+  - **Optimized Performance**: Small Markdown file sizes as images are referenced by hash rather than embedded as heavy Base64 strings.
+  - **Automated Cleanup**: The application automatically identifies and removes unused image blobs to keep local storage clean.
 
-## 🛠 Technology Stack
+## Technical Overview
 
-- **Frontend Framework**: [React](https://reactjs.org/) (with TypeScript)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Markdown Parsing**: [marked](https://marked.js.org/)
-- **HTML Sanitization**: [DOMPurify](https://github.com/cure53/DOMPurify)
-- **Syntax Highlighting**: [highlight.js](https://highlightjs.org/)
-- **PDF Generation**: [html2pdf.js](https://ekoopmans.github.io/html2pdf.js/)
-- **Hosting**: Firebase Hosting
+The application is built with a modern, high-performance stack:
 
-## 💻 Running Locally
+| Component | Technology |
+| :--- | :--- |
+| **Core** | React 18 + TypeScript |
+| **Editor** | Monaco Editor (VS Code's engine) |
+| **Styling** | Tailwind CSS 4 |
+| **Parsing** | marked.js + highlight.js |
+| **Security** | DOMPurify for HTML sanitization |
+| **Storage** | IndexedDB with SHA-256 hashing for offline image support |
+
+## Installation
 
 ### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
+- Node.js (v18 or higher recommended)
+- npm or yarn
 
-### Installation
+### Steps
 
-1. **Clone the repository** (if applicable):
+1. **Clone the repository**
    ```bash
    git clone <repository-url>
    cd Desktop_Markdown_Editor
    ```
 
-2. **Install dependencies**:
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Start the development server**:
+3. **Start development server**
    ```bash
    npm run dev
    ```
-   The application will be available at `http://localhost:5173`.
+   Open `http://localhost:5173` in your browser.
 
-### Building for Production
-To create an optimized production build:
+## Deployment
+
+The project is configured for Firebase Hosting. To deploy your own instance:
 ```bash
 npm run build
+firebase deploy
 ```
-The compiled files will be located in the `dist` directory.
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.
