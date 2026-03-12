@@ -20,6 +20,14 @@ interface ToolbarProps {
   onUpdatePDFConfig: (config: Partial<PDFConfig>) => void
   activeTab: 'editor' | 'preview'
   onTabChange: (tab: 'editor' | 'preview') => void
+  isEditorCollapsed: boolean
+  onToggleEditor: () => void
+  onUploadHeaderBanner: () => void
+  onClearHeaderBanner: () => void
+  hasHeaderBanner: boolean
+  onUploadFooterBanner: () => void
+  onClearFooterBanner: () => void
+  hasFooterBanner: boolean
 }
 
 export default function Toolbar({
@@ -41,13 +49,27 @@ export default function Toolbar({
   onUpdatePDFConfig,
   activeTab,
   onTabChange,
+  isEditorCollapsed,
+  onToggleEditor,
+  onUploadHeaderBanner,
+  onClearHeaderBanner,
+  hasHeaderBanner,
+  onUploadFooterBanner,
+  onClearFooterBanner,
+  hasFooterBanner,
 }: ToolbarProps) {
 
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [formatOpen, setFormatOpen] = useState(false)
+  const [orientOpen, setOrientOpen] = useState(false)
+  const [marginOpen, setMarginOpen] = useState(false)
 
   const downloadMenuRef = useRef<HTMLDivElement>(null)
   const profileMenuRef = useRef<HTMLDivElement>(null)
+  const formatRef = useRef<HTMLDivElement>(null)
+  const orientRef = useRef<HTMLDivElement>(null)
+  const marginRef = useRef<HTMLDivElement>(null)
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -58,265 +80,400 @@ export default function Toolbar({
       if (profileMenuOpen && profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
         setProfileMenuOpen(false)
       }
+      if (formatOpen && formatRef.current && !formatRef.current.contains(e.target as Node)) {
+        setFormatOpen(false)
+      }
+      if (orientOpen && orientRef.current && !orientRef.current.contains(e.target as Node)) {
+        setOrientOpen(false)
+      }
+      if (marginOpen && marginRef.current && !marginRef.current.contains(e.target as Node)) {
+        setMarginOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [downloadMenuOpen, profileMenuOpen])
+  }, [downloadMenuOpen, profileMenuOpen, formatOpen, orientOpen, marginOpen])
 
-  const btnBase = "flex items-center justify-center gap-1.5 h-9 px-2.5 rounded-lg cursor-pointer border border-transparent bg-transparent text-gray-600 dark:text-gray-400 transition-all hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white active:scale-95 shrink-0"
+  const btnBase = "flex items-center justify-center gap-1.5 h-9 px-1.5 sm:px-2.5 rounded-lg cursor-pointer border border-transparent bg-transparent text-gray-600 dark:text-gray-400 transition-all hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white active:scale-95 shrink-0"
 
   return (
-    <div className="flex items-center justify-between h-14 px-3 md:px-5 bg-white dark:bg-[#1a1c23] border-b border-gray-200 dark:border-[#2d3139] shrink-0 relative z-50">
+    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between h-auto md:h-14 px-1.5 md:px-5 bg-white dark:bg-[#1a1c23] border-b border-gray-200 dark:border-[#2d3139] shrink-0 relative z-50 gap-1.5 md:gap-4 py-1.5 md:py-0">
 
-      {/* LEFT: Logo + Actions */}
-      <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
-        {/* Logo */}
-        <div className="flex items-center text-blue-600 dark:text-blue-400 mr-1 md:mr-3">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <rect x="2" y="4" width="20" height="16" rx="4" fill="currentColor" opacity="0.15" />
-            <path d="M6 8h12M6 12h8M6 16h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
+      {/* TOP ROW (Mobile) / Branding + Nav + Account (Desktop) */}
+      <div className="flex items-center justify-between md:contents order-first pb-1 md:pb-0">
+        {/* CENTER-ISH (Tabs & Title) */}
+        <div className="flex flex-col items-start min-w-0 md:mx-4 flex-1">
+          <div className="flex items-center gap-1.5">
+            {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)]" title="Unsaved changes" />}
+            <span className="text-sm font-semibold text-gray-800 dark:text-white truncate max-w-[100px] xs:max-w-[150px] md:max-w-[200px]">{fileName}</span>
+          </div>
+          {/* Mobile Tabs */}
+          <div className="flex md:hidden bg-gray-100 dark:bg-white/5 p-0.5 rounded-md mt-1 shrink-0">
+            <button
+              className={`px-3 py-0.5 text-[10px] font-semibold rounded border-none cursor-pointer transition-all ${activeTab === 'editor' ? 'bg-white dark:bg-[#2d3139] text-blue-600 dark:text-blue-400 shadow-sm' : 'bg-transparent text-gray-500 dark:text-gray-400'}`}
+              onClick={() => onTabChange('editor')}
+            >Edit</button>
+            <button
+              className={`px-3 py-0.5 text-[10px] font-semibold rounded border-none cursor-pointer transition-all ${activeTab === 'preview' ? 'bg-white dark:bg-[#2d3139] text-blue-600 dark:text-blue-400 shadow-sm' : 'bg-transparent text-gray-500 dark:text-gray-400'}`}
+              onClick={() => onTabChange('preview')}
+            >Preview</button>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <button className={btnBase} onClick={onNew} title="New file">
-          <IconNew />
-          <span className="hidden lg:inline text-xs font-medium">New</span>
-        </button>
-
-        <button className={btnBase} onClick={onOpen} title="Open file">
-          <IconOpen />
-          <span className="hidden lg:inline text-xs font-medium">Open</span>
-        </button>
-
-        <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block" />
-
-        <button className={btnBase} onClick={onInsertImage} title="Insert Image">
-          <IconImage />
-          <span className="hidden lg:inline text-xs font-medium">Image</span>
-        </button>
-
-        <button className={btnBase} onClick={onInsertPageBreak} title="Insert Page Break">
-          <IconPageBreak />
-          <span className="hidden lg:inline text-xs font-medium">Break</span>
-        </button>
-
-        <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block" />
-
-        <button
-          className={`${btnBase} ${showPDFTimestamp ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10' : ''}`}
-          onClick={onTogglePDFTimestamp}
-          title="Toggle PDF Timestamp"
-        >
-          {showPDFTimestamp ? <IconCheck /> : <span className="w-4 h-4" />}
-          <span className="hidden lg:inline text-xs font-medium">Timestamp</span>
-        </button>
-
-        <button
-          className={`${btnBase} ${showPageNumbers ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10' : ''}`}
-          onClick={onTogglePageNumbers}
-          title="Toggle PDF Page Numbers"
-        >
-          {showPageNumbers ? <IconCheck /> : <span className="w-4 h-4" />}
-          <span className="hidden lg:inline text-xs font-medium">Page #</span>
-        </button>
-
-        <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden xl:block" />
-
-        {/* Page Setup Controls – visible on xl+ */}
-        <div className="hidden xl:flex items-center gap-1.5 ml-1">
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-md px-2 py-1">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Size</span>
-            <select
-              className="bg-transparent border-none text-gray-800 dark:text-gray-200 text-xs font-medium outline-none cursor-pointer"
-              value={pdfConfig.format}
-              onChange={(e) => onUpdatePDFConfig({ format: e.target.value as any })}
+        {/* RIGHT (Download & Profile) */}
+        <div className="flex items-center gap-1 md:gap-2.5 shrink-0 ml-2">
+          <div className="relative" ref={downloadMenuRef}>
+            <button
+              className="flex items-center gap-1.5 h-8 md:h-9 px-2 md:px-4 rounded-lg font-semibold text-[11px] md:text-[13px] cursor-pointer border-none bg-blue-600 dark:bg-blue-500 text-white transition-all shadow-sm hover:bg-blue-700 dark:hover:bg-blue-400 hover:shadow-md active:scale-95"
+              onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+              title="Download options"
             >
-              <option value="a4">A4</option>
-              <option value="letter">Letter</option>
-              <option value="legal">Legal</option>
-            </select>
+              <IconDownload />
+              <span className="hidden md:inline">Download</span>
+              <span className="hidden md:block"><IconChevronDown /></span>
+            </button>
+
+            {downloadMenuOpen && (
+              <div className="absolute top-full mt-2 right-0 w-56 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-1.5 z-[9999]">
+                <button
+                  className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                  onClick={() => { onDownload(); setDownloadMenuOpen(false) }}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <span className="font-bold text-[11px]">MD</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-semibold">Markdown</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Save as .md file</span>
+                  </div>
+                </button>
+
+                <button
+                  className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                  onClick={() => { onDownloadPDF(); setDownloadMenuOpen(false) }}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <IconPDF />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-semibold">PDF</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Share or print format</span>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center bg-gray-100 dark:bg-white/5 rounded-md px-2 py-1">
-            <select
-              className="bg-transparent border-none text-gray-800 dark:text-gray-200 text-xs font-medium outline-none cursor-pointer"
-              value={pdfConfig.orientation}
-              onChange={(e) => onUpdatePDFConfig({ orientation: e.target.value as any })}
-            >
-              <option value="portrait">Portrait</option>
-              <option value="landscape">Landscape</option>
-            </select>
-          </div>
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 hidden md:block" />
 
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-md px-2 py-1">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Margin</span>
-            <select
-              className="bg-transparent border-none text-gray-800 dark:text-gray-200 text-xs font-medium outline-none cursor-pointer"
-              value={pdfConfig.margin}
-              onChange={(e) => onUpdatePDFConfig({ margin: parseFloat(e.target.value) })}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer transition-all hover:ring-2 hover:ring-blue-500/40 active:scale-95 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm border-none"
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              title="Profile & Settings"
             >
-              <option value="0.2">0.2 in</option>
-              <option value="0.5">0.5 in</option>
-              <option value="0.8">0.8 in</option>
-              <option value="1.0">1.0 in</option>
-            </select>
+              <span className="text-[10px] md:text-sm font-bold">U</span>
+            </button>
+
+            {profileMenuOpen && (
+              <div className="absolute top-full mt-2 right-0 w-64 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-1.5 z-[9999]">
+                <button
+                  className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                  onClick={() => { onToggleTheme(); }}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-yellow-500 transition-colors">
+                    {theme === 'dark' ? <IconSun /> : <IconMoon />}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-semibold">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Switch appearance</span>
+                  </div>
+                </button>
+
+                <div className="h-px bg-gray-100 dark:bg-gray-700/50 my-1 mx-2" />
+
+                <div className="px-3 py-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Header Text</label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-1.5">
+                      <button 
+                        className="text-gray-400 hover:text-blue-500 transition-colors active:scale-95" 
+                        onClick={(e) => { e.stopPropagation(); onUploadHeaderBanner(); }}
+                        title="Upload Header HTML Banner"
+                      >
+                        <IconHTML size={14} />
+                      </button>
+                      {hasHeaderBanner && (
+                        <button 
+                          className="text-red-400 hover:text-red-600 transition-colors active:scale-95" 
+                          onClick={(e) => { e.stopPropagation(); onClearHeaderBanner(); }}
+                          title="Remove Header Banner"
+                        >
+                          <IconX />
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      className="flex-1 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-md text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      placeholder="e.g. Header Text"
+                      value={pdfConfig.headerText}
+                      onChange={(e) => onUpdatePDFConfig({ headerText: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="px-3 py-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Footer Text</label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-1.5">
+                      <button 
+                        className="text-gray-400 hover:text-blue-500 transition-colors active:scale-95" 
+                        onClick={(e) => { e.stopPropagation(); onUploadFooterBanner(); }}
+                        title="Upload Footer HTML Banner"
+                      >
+                        <IconHTML size={14} />
+                      </button>
+                      {hasFooterBanner && (
+                        <button 
+                          className="text-red-400 hover:text-red-600 transition-colors active:scale-95" 
+                          onClick={(e) => { e.stopPropagation(); onClearFooterBanner(); }}
+                          title="Remove Footer Banner"
+                        >
+                          <IconX />
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      className="flex-1 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-md text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      placeholder="e.g. Footer Text"
+                      value={pdfConfig.footerText}
+                      onChange={(e) => onUpdatePDFConfig({ footerText: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="h-px bg-gray-100 dark:bg-gray-700/50 my-1 mx-2" />
+
+                <button
+                  className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                  onClick={() => { setProfileMenuOpen(false); alert('Sign In clicked') }}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                    <IconSignIn />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-semibold">Sign In</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Access your account</span>
+                  </div>
+                </button>
+
+                <button
+                  className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                  onClick={() => { setProfileMenuOpen(false); alert('Sign Up clicked') }}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <IconSignUp />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-semibold">Sign Up</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Create new account</span>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* CENTER: File name + Mobile tabs */}
-      <div className="flex flex-col items-center justify-center min-w-0 mx-2 md:mx-4">
-        <div className="flex items-center gap-2">
-          {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)]" title="Unsaved changes" />}
-          <span className="text-sm font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-[200px]">{fileName}</span>
-        </div>
-        {/* Mobile Tabs */}
-        <div className="flex md:hidden bg-gray-100 dark:bg-white/5 p-0.5 rounded-md mt-1">
-          <button
-            className={`px-3 py-1 text-[11px] font-semibold rounded border-none cursor-pointer transition-all ${activeTab === 'editor' ? 'bg-white dark:bg-[#2d3139] text-blue-600 dark:text-blue-400 shadow-sm' : 'bg-transparent text-gray-500 dark:text-gray-400'}`}
-            onClick={() => onTabChange('editor')}
-          >Edit</button>
-          <button
-            className={`px-3 py-1 text-[11px] font-semibold rounded border-none cursor-pointer transition-all ${activeTab === 'preview' ? 'bg-white dark:bg-[#2d3139] text-blue-600 dark:text-blue-400 shadow-sm' : 'bg-transparent text-gray-500 dark:text-gray-400'}`}
-            onClick={() => onTabChange('preview')}
-          >Preview</button>
-        </div>
-      </div>
+      {/* BOTTOM ROW (Mobile) / Actions (Desktop) */}
+      <div className="relative flex items-center shrink min-w-0 order-last md:order-first border-t border-gray-100 dark:border-gray-800 md:border-none pt-1 md:pt-0">
+        <div className="flex items-center gap-0.5 md:gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="hidden md:flex items-center text-blue-600 dark:text-blue-400 mr-2 md:mr-3">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect x="2" y="4" width="20" height="16" rx="4" fill="currentColor" opacity="0.15" />
+              <path d="M6 8h12M6 12h8M6 16h10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </div>
 
-      {/* RIGHT: Download + Profile */}
-      <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
-
-        {/* Download Button + Dropdown */}
-        <div className="relative" ref={downloadMenuRef}>
-          <button
-            className="flex items-center gap-1.5 h-9 px-3 md:px-4 rounded-lg font-semibold text-[13px] cursor-pointer border-none bg-blue-600 dark:bg-blue-500 text-white transition-all shadow-sm hover:bg-blue-700 dark:hover:bg-blue-400 hover:shadow-md active:scale-95"
-            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-            title="Download options"
+          <button 
+            className={`${btnBase} hidden md:flex ${isEditorCollapsed ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10' : ''}`} 
+            onClick={onToggleEditor} 
           >
-            <IconDownload />
-            <span className="hidden md:inline">Download</span>
-            <IconChevronDown />
+            <IconSidebar collapsed={isEditorCollapsed} />
           </button>
 
-          {downloadMenuOpen && (
-            <div className="absolute top-full mt-2 right-0 w-56 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-1.5 z-[9999]">
-              <button
-                className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                onClick={() => { onDownload(); setDownloadMenuOpen(false) }}
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  <span className="font-bold text-[11px]">MD</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[13px] font-semibold">Markdown</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500">Save as .md file</span>
-                </div>
-              </button>
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden md:block" />
 
-              <button
-                className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                onClick={() => { onDownloadPDF(); setDownloadMenuOpen(false) }}
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  <IconPDF />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[13px] font-semibold">PDF</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500">Share or print format</span>
-                </div>
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 hidden md:block" />
-
-        {/* Profile Avatar + Dropdown */}
-        <div className="relative" ref={profileMenuRef}>
-          <button
-            className="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-all hover:ring-2 hover:ring-blue-500/40 active:scale-95 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm border-none"
-            onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-            title="Profile & Settings"
-          >
-            <span className="text-sm font-bold">U</span>
+          <button className={btnBase} onClick={onNew} title="New file">
+            <IconNew />
+            <span className="hidden lg:inline text-xs font-medium">New</span>
           </button>
 
-          {profileMenuOpen && (
-            <div className="absolute top-full mt-2 right-0 w-64 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-1.5 z-[9999]">
+          <button className={btnBase} onClick={onOpen} title="Open file">
+            <IconOpen />
+            <span className="hidden lg:inline text-xs font-medium">Open</span>
+          </button>
 
-              {/* Mode Toggle */}
-              <button
-                className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                onClick={() => { onToggleTheme(); }}
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-yellow-500 transition-colors">
-                  {theme === 'dark' ? <IconSun /> : <IconMoon />}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[13px] font-semibold">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500">Switch appearance</span>
-                </div>
-              </button>
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5" />
 
-              <div className="h-px bg-gray-100 dark:bg-gray-700/50 my-1 mx-2" />
+          <button className={btnBase} onClick={onInsertImage} title="Insert Image">
+            <IconImage />
+            <span className="hidden lg:inline text-xs font-medium">Image</span>
+          </button>
 
-              {/* Header Text */}
-              <div className="px-3 py-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Header Text</label>
-                <input
-                  type="text"
-                  className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-md text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                  placeholder="e.g. Company Name"
-                  value={pdfConfig.headerText}
-                  onChange={(e) => onUpdatePDFConfig({ headerText: e.target.value })}
-                />
-              </div>
+          <button className={btnBase} onClick={onInsertPageBreak} title="Insert Page Break">
+            <IconPageBreak />
+            <span className="hidden lg:inline text-xs font-medium">Break</span>
+          </button>
 
-              {/* Footer Text */}
-              <div className="px-3 py-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Footer Text</label>
-                <input
-                  type="text"
-                  className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 rounded-md text-gray-800 dark:text-gray-200 text-xs px-2.5 py-1.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                  placeholder="e.g. Confidential"
-                  value={pdfConfig.footerText}
-                  onChange={(e) => onUpdatePDFConfig({ footerText: e.target.value })}
-                />
-              </div>
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5" />
 
-              <div className="h-px bg-gray-100 dark:bg-gray-700/50 my-1 mx-2" />
+          <button
+            className={`${btnBase} ${showPDFTimestamp ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10 shadow-inner' : ''}`}
+            onClick={onTogglePDFTimestamp}
+            title="Toggle PDF Timestamp"
+          >
+            <IconClock />
+            <span className="hidden lg:inline text-xs font-medium">Timestamp</span>
+          </button>
 
-              {/* Sign In */}
-              <button
-                className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                onClick={() => { setProfileMenuOpen(false); alert('Sign In clicked') }}
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                  <IconSignIn />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[13px] font-semibold">Sign In</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500">Access your account</span>
-                </div>
-              </button>
+          <button
+            className={`${btnBase} ${showPageNumbers ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10 shadow-inner' : ''}`}
+            onClick={onTogglePageNumbers}
+            title="Toggle PDF Page Numbers"
+          >
+            <IconHash />
+            <span className="hidden lg:inline text-xs font-medium">Page #</span>
+          </button>
 
-              {/* Sign Up */}
-              <button
-                className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                onClick={() => { setProfileMenuOpen(false); alert('Sign Up clicked') }}
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  <IconSignUp />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[13px] font-semibold">Sign Up</span>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500">Create new account</span>
-                </div>
-              </button>
-            </div>
-          )}
+
         </div>
+
+        {/* Action Controls (Fixed position to prevent clipping) */}
+        <div className="flex items-center shrink-0 pr-1 md:pr-0">
+          {/* Mobile Configuration Icons */}
+          <div className="flex xl:hidden items-center gap-0.5 md:gap-1.5 ml-1">
+            <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5" />
+            
+            {/* Format Icon */}
+            <div className="relative" ref={formatRef}>
+              <button
+                className={`${btnBase} ${formatOpen ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10' : ''}`}
+                onClick={() => { setFormatOpen(!formatOpen); setOrientOpen(false); setMarginOpen(false); }}
+                title="Page Size"
+              >
+                <IconLayout />
+              </button>
+              {formatOpen && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-32 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-2 z-[9999] animate-in fade-in slide-in-from-top-2">
+                  {['a4', 'letter', 'legal'].map(s => (
+                    <button
+                      key={s}
+                      className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase rounded-lg transition-colors ${pdfConfig.format === s ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-500/10' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                      onClick={() => { onUpdatePDFConfig({ format: s as any }); setFormatOpen(false); }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Orientation Icon */}
+            <div className="relative" ref={orientRef}>
+              <button
+                className={`${btnBase} ${orientOpen ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10' : ''}`}
+                onClick={() => { setOrientOpen(!orientOpen); setFormatOpen(false); setMarginOpen(false); }}
+                title="Page Orientation"
+              >
+                <IconRotate />
+              </button>
+              {orientOpen && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-32 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-2 z-[9999] animate-in fade-in slide-in-from-top-2">
+                  {['portrait', 'landscape'].map(o => (
+                    <button
+                      key={o}
+                      className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase rounded-lg transition-colors ${pdfConfig.orientation === o ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-500/10' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                      onClick={() => { onUpdatePDFConfig({ orientation: o as any }); setOrientOpen(false); }}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Margin Icon */}
+            <div className="relative" ref={marginRef}>
+              <button
+                className={`${btnBase} ${marginOpen ? '!text-blue-600 dark:!text-blue-400 !bg-blue-50 dark:!bg-blue-500/10' : ''}`}
+                onClick={() => { setMarginOpen(!marginOpen); setFormatOpen(false); setOrientOpen(false); }}
+                title="Page Margin"
+              >
+                <IconMargin />
+              </button>
+              {marginOpen && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-32 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-2 z-[9999] animate-in fade-in slide-in-from-top-2">
+                  {[0.2, 0.5, 0.8, 1.0].map(m => (
+                    <button
+                      key={m}
+                      className={`w-full text-left px-3 py-2 text-[10px] font-bold uppercase rounded-lg transition-colors ${pdfConfig.margin === m ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-500/10' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                      onClick={() => { onUpdatePDFConfig({ margin: m }); setMarginOpen(false); }}
+                    >
+                      {m.toFixed(1)} in
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Configuration Selects */}
+          <div className="hidden xl:flex items-center gap-1.5 ml-1">
+            <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5" />
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-md px-2 py-1">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Size</span>
+              <select
+                className="bg-transparent border-none text-gray-800 dark:text-gray-200 text-xs font-medium outline-none cursor-pointer"
+                value={pdfConfig.format}
+                onChange={(e) => onUpdatePDFConfig({ format: e.target.value as any })}
+              >
+                <option value="a4">A4</option>
+                <option value="letter">Letter</option>
+                <option value="legal">Legal</option>
+              </select>
+            </div>
+
+            <div className="flex items-center bg-gray-100 dark:bg-white/5 rounded-md px-2 py-1">
+              <select
+                className="bg-transparent border-none text-gray-800 dark:text-gray-200 text-xs font-medium outline-none cursor-pointer"
+                value={pdfConfig.orientation}
+                onChange={(e) => onUpdatePDFConfig({ orientation: e.target.value as any })}
+              >
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-md px-2 py-1">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Margin</span>
+              <select
+                className="bg-transparent border-none text-gray-800 dark:text-gray-200 text-xs font-medium outline-none cursor-pointer"
+                value={pdfConfig.margin}
+                onChange={(e) => onUpdatePDFConfig({ margin: parseFloat(e.target.value) })}
+              >
+                <option value="0.2">0.2 in</option>
+                <option value="0.5">0.5 in</option>
+                <option value="0.8">0.8 in</option>
+                <option value="1.0">1.0 in</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-[#1a1c23] to-transparent md:hidden" />
       </div>
     </div>
   )
@@ -367,6 +524,26 @@ function IconPageBreak() {
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <path d="M4 12h16" strokeDasharray="4 2" />
       <path d="M14 2v6h6" />
+    </svg>
+  )
+}
+
+function IconClock() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+
+function IconHash() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="9" x2="20" y2="9" />
+      <line x1="4" y1="15" x2="20" y2="15" />
+      <line x1="10" y1="3" x2="8" y2="21" />
+      <line x1="16" y1="3" x2="14" y2="21" />
     </svg>
   )
 }
@@ -438,6 +615,74 @@ function IconSignUp() {
       <circle cx="8.5" cy="7" r="4" />
       <line x1="20" y1="8" x2="20" y2="14" />
       <line x1="23" y1="11" x2="17" y2="11" />
+    </svg>
+  )
+}
+
+function IconX() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  )
+}
+
+function IconHTML({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+      <polyline points="14 2 14 8 20 8" />
+      <path d="M8 13v4" />
+      <path d="M12 13v4" />
+      <path d="M16 13v4" />
+    </svg>
+  )
+}
+
+function IconTrash() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    </svg>
+  )
+}
+
+function IconRotate() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 4v6h-6" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  )
+}
+
+function IconMargin() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M7 7h10v10H7z" opacity="0.3" />
+      <path d="M7 12h10M12 7v10" />
+    </svg>
+  )
+}
+
+function IconLayout() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="9" y1="21" x2="9" y2="9" />
+    </svg>
+  )
+}
+
+function IconSidebar({ collapsed }: { collapsed?: boolean }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      {!collapsed && <line x1="9" y1="3" x2="9" y2="21" />}
     </svg>
   )
 }
