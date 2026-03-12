@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="public/markdown.svg" width="80" height="80" alt="genPdf Logo" />
   <h1>genPdf</h1>
   <p><strong>A modern, fast, and feature-rich Markdown Editor</strong></p>
   <p>
@@ -38,7 +39,7 @@ The application is built with a modern, high-performance stack:
 | :--- | :--- |
 | **Core** | React 18 + TypeScript |
 | **Editor** | Monaco Editor (VS Code's engine) |
-| **Styling** | Tailwind CSS 4 |
+| **Styling** | [Tailwind CSS 4](https://tailwindcss.com/) |
 | **Parsing** | marked.js + highlight.js |
 | **Security** | DOMPurify for HTML sanitization |
 | **Storage** | IndexedDB with SHA-256 hashing for offline image support |
