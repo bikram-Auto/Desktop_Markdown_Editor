@@ -5,7 +5,6 @@
   <p>
     <a href="https://desktop-markdown-editor.web.app">Live Demo</a> •
     <a href="#key-features">Key Features</a> •
-    <a href="#installation">Installation</a> •
     <a href="#technical-overview">Technical Overview</a>
   </p>
 </div>
@@ -43,39 +42,6 @@ The application is built with a modern, high-performance stack:
 | **Parsing** | marked.js + highlight.js |
 | **Security** | DOMPurify for HTML sanitization |
 | **Storage** | IndexedDB with SHA-256 hashing for offline image support |
-
-## Installation
-
-### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm or yarn
-
-### Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Desktop_Markdown_Editor
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:5173` in your browser.
-
-## Deployment
-
-The project is configured for Firebase Hosting. To deploy your own instance:
-```bash
-npm run build
-firebase deploy
-```
 
 ## License
 

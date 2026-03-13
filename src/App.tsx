@@ -300,23 +300,57 @@ export default function App() {
         @media print {
           body {
             margin: 0;
-            background: white;
+            background: white !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+          }
+
+          /* Force light mode colors during print even if app is in dark mode */
+          .dark {
+            background: white !important;
+            color: black !important;
           }
 
           .preview-page-container {
             gap: 0 !important;
             padding: 0 !important;
             margin: 0 !important;
+            background: white !important;
           }
 
           .preview-content {
             box-shadow: none !important;
             border: none !important;
+            background: white !important;
+            color: black !important;
             break-inside: avoid;
             page-break-after: always;
             page-break-inside: avoid;
+          }
+
+          /* Reset prose-invert variables to light mode values during print */
+          .dark .prose {
+            --tw-prose-body: #374151 !important;
+            --tw-prose-headings: #111827 !important;
+            --tw-prose-lead: #4b5563 !important;
+            --tw-prose-links: #2563eb !important;
+            --tw-prose-bold: #111827 !important;
+            --tw-prose-counters: #6b7280 !important;
+            --tw-prose-bullets: #d1d5db !important;
+            --tw-prose-hr: #e5e7eb !important;
+            --tw-prose-quotes: #111827 !important;
+            --tw-prose-quote-borders: #e5e7eb !important;
+            --tw-prose-captions: #6b7280 !important;
+            --tw-prose-code: #111827 !important;
+            --tw-prose-pre-code: #374151 !important;
+            --tw-prose-pre-bg: #f9fafb !important;
+            --tw-prose-th-borders: #d1d5db !important;
+            --tw-prose-td-borders: #e5e7eb !important;
+          }
+
+          /* Increase contrast for header/footer text in print */
+          .text-gray-400 {
+            color: #4b5563 !important;
           }
         }
       `}</style>
