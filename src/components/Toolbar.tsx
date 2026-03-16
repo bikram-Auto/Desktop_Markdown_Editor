@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import type { User } from '../api/users'
 import type { PDFConfig } from '../App'
 
 interface ToolbarProps {
@@ -28,6 +29,14 @@ interface ToolbarProps {
   onUploadFooterBanner: () => void
   onClearFooterBanner: () => void
   hasFooterBanner: boolean
+  onOpenAuth: (mode: 'signin' | 'signup') => void
+  user: User | null
+  onLogout: () => void
+  onSave: () => void
+  onSaveAs: () => void
+  isSaving: boolean
+  preferenceId: string | null
+  onOpenPrefs: () => void
 }
 
 export default function Toolbar({
@@ -57,6 +66,14 @@ export default function Toolbar({
   onUploadFooterBanner,
   onClearFooterBanner,
   hasFooterBanner,
+  onOpenAuth,
+  user,
+  onLogout,
+  onSave,
+  onSaveAs,
+  isSaving,
+  preferenceId,
+  onOpenPrefs,
 }: ToolbarProps) {
 
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false)
@@ -168,15 +185,28 @@ export default function Toolbar({
 
           <div className="relative" ref={profileMenuRef}>
             <button
-              className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer transition-all hover:ring-2 hover:ring-blue-500/40 active:scale-95 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm border-none"
+              className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer transition-all hover:ring-2 hover:ring-blue-500/40 active:scale-95 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm border-none overflow-hidden"
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              title="Profile & Settings"
+              title={user ? `Logged in as ${user.name}` : "Profile & Settings"}
             >
-              <span className="text-[10px] md:text-sm font-bold">U</span>
+              {user ? (
+                <span className="text-[10px] md:text-sm font-bold uppercase">{user.name.charAt(0)}</span>
+              ) : (
+                <span className="text-[10px] md:text-sm font-bold">U</span>
+              )}
             </button>
 
             {profileMenuOpen && (
               <div className="absolute top-full mt-2 right-0 w-64 bg-white dark:bg-[#1e2028] border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-1.5 z-[9999]">
+                {user && (
+                  <>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800/50 mb-1">
+                      <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">Account</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                    </div>
+                  </>
+                )}
                 <button
                   className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
                   onClick={() => { onToggleTheme(); }}
@@ -256,31 +286,48 @@ export default function Toolbar({
 
                 <div className="h-px bg-gray-100 dark:bg-gray-700/50 my-1 mx-2" />
 
-                <button
-                  className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                  onClick={() => { setProfileMenuOpen(false); alert('Sign In clicked') }}
-                >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                    <IconSignIn />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-semibold">Sign In</span>
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Access your account</span>
-                  </div>
-                </button>
+                {!user ? (
+                  <>
+                    <button
+                      className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                      onClick={() => { setProfileMenuOpen(false); onOpenAuth('signin'); }}
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                        <IconSignIn />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-semibold">Sign In</span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500">Access your account</span>
+                      </div>
+                    </button>
 
-                <button
-                  className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                  onClick={() => { setProfileMenuOpen(false); alert('Sign Up clicked') }}
-                >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    <IconSignUp />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-semibold">Sign Up</span>
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500">Create new account</span>
-                  </div>
-                </button>
+                    <button
+                      className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-gray-800 dark:text-white text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                      onClick={() => { setProfileMenuOpen(false); onOpenAuth('signup'); }}
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <IconSignUp />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-semibold">Sign Up</span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500">Create new account</span>
+                      </div>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="flex items-center gap-3 w-full px-3 py-2.5 border-none bg-transparent rounded-lg cursor-pointer text-red-600 dark:text-red-400 text-left hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors group"
+                    onClick={() => { setProfileMenuOpen(false); onLogout(); }}
+                  >
+                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-red-50 dark:bg-red-500/5 text-red-500 transition-colors">
+                      <IconSignOut />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[13px] font-semibold">Log Out</span>
+                      <span className="text-[11px] opacity-70">Sign out of session</span>
+                    </div>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -314,6 +361,38 @@ export default function Toolbar({
           <button className={btnBase} onClick={onOpen} title="Open file">
             <IconOpen />
             <span className="hidden lg:inline text-xs font-medium">Open</span>
+          </button>
+
+          <button
+            className={`${btnBase} ${!user ? 'opacity-40 cursor-not-allowed' : ''}`}
+            onClick={onOpenPrefs}
+            title={!user ? 'Login required' : 'Open saved preferences'}
+            disabled={!user}
+          >
+            <IconCloud />
+            <span className="hidden lg:inline text-xs font-medium">Saved</span>
+          </button>
+
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5" />
+
+          <button
+            className={`${btnBase} ${!user ? 'opacity-40 cursor-not-allowed' : ''} ${isSaving ? 'animate-pulse' : ''}`}
+            onClick={onSave}
+            title={!user ? 'Login required to save' : preferenceId ? 'Save changes' : 'Save new'}
+            disabled={!user || isSaving}
+          >
+            <IconSave />
+            <span className="hidden lg:inline text-xs font-medium">{isSaving ? 'Saving…' : 'Save'}</span>
+          </button>
+
+          <button
+            className={`${btnBase} ${!user ? 'opacity-40 cursor-not-allowed' : ''}`}
+            onClick={onSaveAs}
+            title={!user ? 'Login required' : 'Save as new copy'}
+            disabled={!user || isSaving}
+          >
+            <IconSaveAs />
+            <span className="hidden lg:inline text-xs font-medium">Save As</span>
           </button>
 
           <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5" />
@@ -528,6 +607,34 @@ function IconPageBreak() {
   )
 }
 
+function IconSave() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </svg>
+  )
+}
+
+function IconCloud() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+    </svg>
+  )
+}
+
+function IconSaveAs() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v6" />
+      <polyline points="7 3 7 8 15 8" />
+      <path d="M17 17l3 3m0-3l-3 3" />
+    </svg>
+  )
+}
+
 function IconClock() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -615,6 +722,16 @@ function IconSignUp() {
       <circle cx="8.5" cy="7" r="4" />
       <line x1="20" y1="8" x2="20" y2="14" />
       <line x1="23" y1="11" x2="17" y2="11" />
+    </svg>
+  )
+}
+
+function IconSignOut() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   )
 }
